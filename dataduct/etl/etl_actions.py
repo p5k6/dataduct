@@ -42,7 +42,7 @@ def read_pipeline_definition(file_path):
     return definition
 
 
-def create_pipeline(definition):
+def create_pipeline(definition, yaml_path=None):
     """Creates the pipeline and add the steps specified to the pipeline
 
     Args:
@@ -52,7 +52,7 @@ def create_pipeline(definition):
     etl = ETLPipeline(**definition)
 
     # Add the steps to the pipeline object
-    etl.create_steps(steps)
+    etl.create_steps(steps, yaml_path=yaml_path)
     etl.create_teardown_step()
     logger.info('Created pipeline. Name: %s', etl.name)
     return etl

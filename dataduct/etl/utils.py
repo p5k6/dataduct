@@ -1,10 +1,12 @@
 """Utility functions for processing etl steps
 """
 import imp
+import os.path
 from ..config import Config
 from ..steps import *  # noqa
 from ..utils.helpers import parse_path
 from ..utils.exceptions import ETLInputError
+
 
 STEP_CLASSES = {
     'column-check': ColumnCheckStep,
@@ -61,7 +63,7 @@ STEP_CONFIG = STEP_CLASSES.copy()
 STEP_CONFIG.update(get_custom_steps())
 
 
-def process_steps(steps_params):
+def process_steps(steps_params, yaml_path=None):
     """Format the step parameters by changing step type to step class
     """
     steps = []
@@ -69,5 +71,11 @@ def process_steps(steps_params):
         params = step_param.copy()
         step_type = params.pop('step_type')
         params['step_class'] = STEP_CONFIG[step_type]
+
+        if("script" in step_param and yaml_path is not None):
+            script_relative_path = os.path.join(os.path.dirname(yaml_path), step_param["script"])
+            if(os.path.isfile(script_relative_path)):
+                 params["script"] = script_relative_path
+
         steps.append(params)
     return steps

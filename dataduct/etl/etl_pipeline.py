@@ -450,7 +450,7 @@ class ETLPipeline(object):
             self.intermediate_nodes[step.id] = step.output
 
     def create_steps(self, steps_params, is_bootstrap=False,
-                     is_teardown=False):
+                     is_teardown=False, yaml_path=None):
         """Create pipeline steps and add appropriate dependencies
 
         Note:
@@ -467,7 +467,7 @@ class ETLPipeline(object):
         """
         input_node = None
         steps = []
-        steps_params = process_steps(steps_params)
+        steps_params = process_steps(steps_params, yaml_path)
         for step_param in steps_params:
 
             # Assume that the preceding step is the input if not specified

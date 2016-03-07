@@ -52,7 +52,7 @@ def initialize_etl_objects(pipeline_definitions, time_delta=None,
             definition.update({'time_delta': time_delta})
         if frequency_override is not None:
             definition.update({'frequency': frequency_override})
-        etls.append(create_pipeline(definition))
+        etls.append(create_pipeline(definition, yaml_path=pipeline_definition))
     return etls
 
 
