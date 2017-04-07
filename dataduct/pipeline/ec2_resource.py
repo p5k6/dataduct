@@ -20,6 +20,7 @@ SECURITY_GROUP_ID = config.ec2.get('SECURITY_GROUP_ID', const.NONE)
 SUBNET_ID = config.ec2.get('SUBNET_ID', const.NONE)
 KEY_PAIR = config.etl.get('KEY_PAIR', const.NONE)
 RETRY_DELAY = config.etl.get('RETRY_DELAY', const.DEFAULT_DELAY)
+TASK_RUNNER_TIMEOUT = config.etl.get('TASK_RUNNER_TIMEOUT', const.DEFAULT_TIMEOUT)
 
 
 class Ec2Resource(PipelineObject):
@@ -30,7 +31,7 @@ class Ec2Resource(PipelineObject):
                  id,
                  s3_log_dir=None,
                  schedule=None,
-                 terminate_after='6 Hours',
+                 terminate_after=TASK_RUNNER_TIMEOUT,
                  instance_type=INSTANCE_TYPE,
                  ami=ETL_AMI,
                  security_group=SECURITY_GROUP,

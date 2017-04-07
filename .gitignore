@@ -21,3 +21,6 @@
 
 # pycharm or intellij
 .idea/
+
+# vim swap files
+.sw*
