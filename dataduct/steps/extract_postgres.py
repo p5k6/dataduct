@@ -123,6 +123,5 @@ class ExtractPostgresStep(ETLStep):
         """
         input_args = cls.pop_inputs(input_args)
         step_args = cls.base_arguments_processor(etl, input_args)
-        step_args['resource'] = etl.ec2_resource
 
         return step_args
