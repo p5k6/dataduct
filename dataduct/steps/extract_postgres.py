@@ -85,6 +85,7 @@ class ExtractPostgresStep(ETLStep):
             object_class=CopyActivity,
             schedule=self.schedule,
             resource=self.resource,
+            worker_group=self.worker_group,
             input_node=input_node,
             output_node=intermediate_node,
             depends_on=self.depends_on,
@@ -110,6 +111,7 @@ class ExtractPostgresStep(ETLStep):
             command=command,
             max_retries=self.max_retries,
             resource=self.resource,
+            worker_group=self.worker_group,
             schedule=self.schedule,
         )
 
