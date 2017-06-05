@@ -86,24 +86,29 @@ def rds_connection(database_name=None, sql_creds=None,
 
 
 
-def get_postgres_config():
+def get_postgres_config(database_name=None):
     """Get postgres config from config file and return the dictionary
     """
     if not hasattr(config,'postgres'):
 	raise ETLConfigError('Postgres config not found')
-    return config.postgres
 
+    if database_name not in config.postgres:
+        raise ETLConfigError(
+            'Config for hostname: %s not found' % database_name)
 
+    sql_creds = config.postgres[database_name]
+    sql_creds['DATABASE'] = database_name
 
+    return sql_creds
 
 @retry(CONNECTION_RETRIES, 60)
 @hook('connect_to_postgres')
 def postgres_connection(postgres_creds=None, autocommit=True,
-                        connect_timeout=30, **kwargs):
+                        connect_timeout=30, database_name=None, **kwargs):
     """Fetch a psql connection object to postgres
     """
     if postgres_creds is None:
-        postgres_creds = get_postgres_config()
+        postgres_creds = get_postgres_config(database_name)
 
     connection = psycopg2.connect(
         rds_instance=postgres_creds['RDS_INSTANCE_ID'],

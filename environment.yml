@@ -410,5 +410,7 @@ dependencies:
   - pyprind
   - requests
   - awscli
+  - sqlparse>=0.2.0
+  - ipdb
 prefix: !!python/unicode '/Users/jstanfield/miniconda2/envs/dataduct-dev'
 

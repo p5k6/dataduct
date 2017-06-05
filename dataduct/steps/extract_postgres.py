@@ -9,6 +9,7 @@ from ..pipeline import PostgresDatabase
 from ..pipeline import PipelineObject
 from ..pipeline import ShellCommandActivity
 from ..utils.helpers import exactly_one
+from dataduct.utils.helpers import get_modified_s3_path
 from ..utils.exceptions import ETLInputError
 from ..database import SelectStatement
 
@@ -26,7 +27,10 @@ class ExtractPostgresStep(ETLStep):
     def __init__(self,
                  table=None,
                  sql=None,
+                 host_name=None,
                  output_path=None,
+                 intermediate_path=None,
+                 splits=4,
                  **kwargs):
         """Constructor for the ExtractPostgresStep class
 
@@ -49,10 +53,10 @@ class ExtractPostgresStep(ETLStep):
         else:
             raise ETLInputError('Provide a sql statement or a table name')
 
-        region = POSTGRES_CONFIG['REGION']
-        rds_instance_id = POSTGRES_CONFIG['RDS_INSTANCE_ID']
-        user = POSTGRES_CONFIG['USERNAME']
-        password = POSTGRES_CONFIG['PASSWORD']
+        region = POSTGRES_CONFIG[host_name]['REGION']
+        rds_instance_id = POSTGRES_CONFIG[host_name]['RDS_INSTANCE_ID']
+        user = POSTGRES_CONFIG[host_name]['USERNAME']
+        password = POSTGRES_CONFIG[host_name]['PASSWORD']
 
         database_node = self.create_pipeline_object(
                     object_class=PostgresDatabase,
@@ -74,12 +78,21 @@ class ExtractPostgresStep(ETLStep):
             host=rds_instance_id,
         )
 
+#         if self.input and not no_input:
+#             input_nodes = [self.input]
+#         else:
+#             input_nodes = []
+# 
+#         self._output = base_output_node
+
         s3_format = self.create_pipeline_object(
             object_class=PipelineObject,
             type='TSV'
         )
 
-        intermediate_node = self.create_s3_data_node(format=s3_format)
+        intermediate_node = self.create_s3_data_node(
+            self.get_output_s3_path(get_modified_s3_path(intermediate_path)) 
+            ,format=s3_format)
 
         self.create_pipeline_object(
             object_class=CopyActivity,
@@ -93,16 +106,22 @@ class ExtractPostgresStep(ETLStep):
         )
 
         self._output = self.create_s3_data_node(
-            self.get_output_s3_path(output_path))
+            self.get_output_s3_path(get_modified_s3_path(output_path)))
 
         # This shouldn't be necessary but -
         # AWS uses \\n as null, so we need to remove it
-        command = ' '.join(["cat",
+        command = ' '.join(["[[ -z $(find ${INPUT1_STAGING_DIR} -maxdepth 1 ! \
+                           -path ${INPUT1_STAGING_DIR} -name '*' -size +0) ]] \
+                           && touch ${OUTPUT1_STAGING_DIR}/part-0 ",
+                           "|| cat",
                             "${INPUT1_STAGING_DIR}/*",
                             "| sed 's/\\\\\\\\n/NULL/g'",  # replace \\n
                             # get rid of control characters
                             "| tr -d '\\\\000'",
-                            "> ${OUTPUT1_STAGING_DIR}/part-0"])
+                            # split into `splits` number of equal sized files
+                            ("| split -a 4 -d -l $((($(cat ${{INPUT1_STAGING_DIR}}/* | wc -l) + \
+                            {splits} - 1) / {splits})) - ${{OUTPUT1_STAGING_DIR}}/part-"
+                                .format(splits=splits))])
 
         self.create_pipeline_object(
             object_class=ShellCommandActivity,

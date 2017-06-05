@@ -58,7 +58,7 @@ def create_pipeline(definition):
     return etl
 
 
-def validate_pipeline(etl, force=False):
+def validate_pipeline(etl, force=False, test_pipeline=False):
     """Validates the pipeline that was created
 
     Args:
@@ -67,10 +67,10 @@ def validate_pipeline(etl, force=False):
     """
     if force:
         etl.delete_if_exists()
-    etl.validate()
+    etl.validate(test_pipeline)
     logger.debug(yaml.dump(etl.pipeline.aws_format))
-    logger.info('Validated pipeline. Id: %s', etl.pipeline.id)
-
+    if not test_pipeline:
+        logger.info('Validated pipeline. Id: %s', etl.pipeline.id)
 
 @hook('activate_pipeline')
 def activate_pipeline(etl):

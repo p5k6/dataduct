@@ -11,22 +11,16 @@ config = Config()
 if not hasattr(config, 'postgres'):
     raise ETLConfigError('Postgres credentials missing from config')
 
-REGION = config.postgres['REGION']
-RDS_INSTANCE_ID = config.postgres['RDS_INSTANCE_ID']
-USERNAME = config.postgres['USERNAME']
-PASSWORD = config.postgres['PASSWORD']
-
-
 class PostgresDatabase(PipelineObject):
     """Postgres resource class
     """
 
     def __init__(self,
                  id,
-                 region=REGION,
-                 rds_instance_id=RDS_INSTANCE_ID,
-                 username=USERNAME,
-                 password=PASSWORD):
+                 region=None,
+                 rds_instance_id=None,
+                 username=None,
+                 password=None):
         """Constructor for the Postgres class
 
         Args:
@@ -36,6 +30,9 @@ class PostgresDatabase(PipelineObject):
             username(str): username for the database
             password(str): password for the database
         """
+
+        if (None in [ region, rds_instance_id, username, password]):
+            raise ETLConfigError('Postgres credentials missing from config')
 
         kwargs = {
             'id': id,

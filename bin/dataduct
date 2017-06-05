@@ -16,6 +16,7 @@ PIPELINE = 'pipeline'
 CREATE = 'create'
 VALIDATE = 'validate'
 ACTIVATE = 'activate'
+TEST = 'test'
 VISUALIZE = 'visualize'
 SQL_SHELL = 'sql_shell'
 
@@ -78,6 +79,8 @@ def pipeline_actions(action, pipeline_definitions, force=None, time_delta=None,
 
     for etl in initialize_etl_objects(pipeline_definitions, time_delta,
                                       frequency_override, backfill):
+        if action == TEST:
+            validate_pipeline(etl, test_pipeline=True)
         if action in [VALIDATE, ACTIVATE]:
             validate_pipeline(etl, force)
         if action == ACTIVATE:
@@ -165,6 +168,16 @@ def main():
             pipeline_definition_parser,
         ],
         help='Validate a pipeline with AWS without activating',
+    )
+    pipeline_subparsers.add_parser(
+        TEST,
+        formatter_class=formatter_class,
+        parents=[
+            mode_parser,
+            pipeline_run_options,
+            pipeline_definition_parser,
+        ],
+        help='test a pipeline with AWS without pushing to aws',
     )
     pipeline_subparsers.add_parser(
         ACTIVATE,

@@ -677,7 +677,7 @@ class ETLPipeline(object):
                 tags.append({'key': key, 'value': variable})
         return tags
 
-    def validate(self):
+    def validate(self, test_pipeline=False):
         """Validate the given pipeline definition by creating a pipeline
 
         Returns:
@@ -700,7 +700,8 @@ class ETLPipeline(object):
                          self.errors)
 
         # Update pipeline definition
-        self.pipeline.update_pipeline_definition()
+        if not test_pipeline:
+            self.pipeline.update_pipeline_definition()
         return self.errors
 
     def activate(self):
