@@ -27,7 +27,7 @@ class ExtractPostgresStep(ETLStep):
     def __init__(self,
                  table=None,
                  sql=None,
-                 host_name=None,
+                 host_db_key=None,
                  output_path=None,
                  intermediate_path=None,
                  splits=4,
@@ -53,10 +53,10 @@ class ExtractPostgresStep(ETLStep):
         else:
             raise ETLInputError('Provide a sql statement or a table name')
 
-        region = POSTGRES_CONFIG[host_name]['REGION']
-        rds_instance_id = POSTGRES_CONFIG[host_name]['RDS_INSTANCE_ID']
-        user = POSTGRES_CONFIG[host_name]['USERNAME']
-        password = POSTGRES_CONFIG[host_name]['PASSWORD']
+        region = POSTGRES_CONFIG[host_db_key]['REGION']
+        rds_instance_id = POSTGRES_CONFIG[host_db_key]['RDS_INSTANCE_ID']
+        user = POSTGRES_CONFIG[host_db_key]['USERNAME']
+        password = POSTGRES_CONFIG[host_db_key]['PASSWORD']
 
         database_node = self.create_pipeline_object(
                     object_class=PostgresDatabase,

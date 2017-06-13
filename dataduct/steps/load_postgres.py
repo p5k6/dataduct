@@ -21,7 +21,7 @@ class LoadPostgresStep(ETLStep):
     def __init__(self,
                  table,
                  postgres_database,
-                 host_name,
+                 host_db_key,
                  insert_query,
                  max_errors=None,
                  replace_invalid_char=None,
@@ -37,10 +37,10 @@ class LoadPostgresStep(ETLStep):
         """
         super(LoadPostgresStep, self).__init__(**kwargs)
 
-        region = POSTGRES_CONFIG[host_name]['REGION']
-        rds_instance_id = POSTGRES_CONFIG[host_name]['RDS_INSTANCE_ID']
-        user = POSTGRES_CONFIG[host_name]['USERNAME']
-        password = POSTGRES_CONFIG[host_name]['PASSWORD']
+        region = POSTGRES_CONFIG[host_db_key]['REGION']
+        rds_instance_id = POSTGRES_CONFIG[host_db_key]['RDS_INSTANCE_ID']
+        user = POSTGRES_CONFIG[host_db_key]['USERNAME']
+        password = POSTGRES_CONFIG[host_db_key]['PASSWORD']
         database_node = self.create_pipeline_object(
                     object_class=PostgresDatabase,
                     region=region,
