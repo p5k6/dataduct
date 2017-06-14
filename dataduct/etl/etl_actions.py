@@ -67,7 +67,7 @@ def validate_pipeline(etl, force=False, test_pipeline=False):
     """
     if force:
         etl.delete_if_exists()
-    etl.validate(test_pipeline)
+    etl.validate(test_pipeline=test_pipeline)
     logger.debug(yaml.dump(etl.pipeline.aws_format))
     if not test_pipeline:
         logger.info('Validated pipeline. Id: %s', etl.pipeline.id)

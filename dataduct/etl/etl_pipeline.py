@@ -700,7 +700,9 @@ class ETLPipeline(object):
                          self.errors)
 
         # Update pipeline definition
-        if not test_pipeline:
+        if test_pipeline:
+            self.pipeline.delete()
+        else:
             self.pipeline.update_pipeline_definition()
         return self.errors
 
