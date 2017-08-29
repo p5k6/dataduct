@@ -53,11 +53,11 @@ QA_LOG_PATH = config.etl.get('QA_LOG_PATH', const.QA_STR)
 DP_INSTANCE_LOG_PATH = config.etl.get('DP_INSTANCE_LOG_PATH', const.NONE)
 DP_PIPELINE_LOG_PATH = config.etl.get('DP_PIPELINE_LOG_PATH', const.NONE)
 
-DEFAULT_TEARDOWN = {
+DEFAULT_TEARDOWN = [{
     'step_type': 'transform',
     'command': 'echo Finished Pipeline',
     'no_output': True
-}
+}]
 
 
 class ETLPipeline(object):
@@ -252,18 +252,11 @@ class ETLPipeline(object):
                 'no_output': True,
                 'name': 'system-bootstrap-config-sig-version'
                 }
-        sleeping = {
-                'step_type': 'transform',
-                'command': "tail -f /dev/null",
-                'no_output': True,
-                'name': 'system-sleeper'
-                }
 
         for resource_type in [const.EC2_RESOURCE_STR, const.EMR_CLUSTER_STR]:
             if resource_type in self.bootstrap_definitions:
                 config_sig_version['resource_type'] = resource_type
                 self.bootstrap_definitions[resource_type].insert(0,config_sig_version)
-                self.bootstrap_definitions[resource_type].insert(1,sleeping)
 
     def set_up_ssh_tunnels(self):
         ssh_commands = []
@@ -649,7 +642,7 @@ class ETLPipeline(object):
     def create_teardown_step(self):
         """Create teardown steps for the pipeline
         """
-        return self.create_steps([self.teardown_definition], is_teardown=True)
+        return self.create_steps(self.teardown_definition, is_teardown=True)
 
     def create_bootstrap_steps(self, resource_type):
         """Create the boostrap steps for installation on all machines
