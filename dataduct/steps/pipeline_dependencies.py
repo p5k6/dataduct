@@ -87,7 +87,14 @@ class PipelineDependenciesStep(TransformStep):
             step_args(dict): Dictionary of the step arguments for the class
         """
         input_args = cls.pop_inputs(input_args)
-        step_args = cls.base_arguments_processor(etl, input_args)
+
+        if input_args.pop('resource_type', None) == const.EMR_CLUSTER_STR:
+            resource_type = const.EMR_CLUSTER_STR
+        else:
+            resource_type = const.EC2_RESOURCE_STR
+
+        step_args = cls.base_arguments_processor(etl, input_args, resource_type=resource_type)
         step_args['pipeline_name'] = etl.name
+
 
         return step_args
