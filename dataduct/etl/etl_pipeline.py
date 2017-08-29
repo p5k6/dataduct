@@ -11,7 +11,6 @@ from datetime import datetime
 from datetime import timedelta
 from itertools import chain
 from urlparse import urlparse
-from IPython import embed
 
 from ..config import Config
 from .utils import process_steps
