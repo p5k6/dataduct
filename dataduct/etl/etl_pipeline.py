@@ -262,7 +262,10 @@ class ETLPipeline(object):
         for db_type in ['postgres', 'mysql', 'mssql']:
             if hasattr(config, db_type):
                 db_config = eval("config." + db_type)
-                tunneled_dbs = [k for k in db_config.keys() if 'TUNNEL_HOST' in db_config[k] and db_config[k]['TUNNEL_HOST'] is not None]
+                if db_config and db_config.keys() is not None:
+                    tunneled_dbs = [k for k in db_config.keys() if 'TUNNEL_HOST' in db_config[k] and db_config[k]['TUNNEL_HOST'] is not None]
+                else:
+                    tunneled_dbs = []
                 commands = [
                        '''aws s3 cp {key_loc} ~/.ssh/{key_name} && \ 
                        chmod 600 ~/.ssh/{key_name} && \
@@ -279,9 +282,10 @@ class ETLPipeline(object):
                            )
                        for db in tunneled_dbs ]
                 ssh_commands.append(commands)
-        
+
+        ssh_commands = list(chain(*ssh_commands))
         if ssh_commands:
-            full_cmd = ' && '.join(list(chain(*ssh_commands)))
+            full_cmd = ' && '.join(ssh_commands)
     
             ssh_tunnel_activity = {
               'step_type': 'transform',
