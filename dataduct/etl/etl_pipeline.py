@@ -244,10 +244,8 @@ class ETLPipeline(object):
         config_sig_version = {
                 'step_type': 'transform',
                 'command': """aws configure set s3.signature_version s3v4 && \
-                              sudo aws configure set s3.signature_version s3v4 && \
-                              sudo echo -e 'Host ec2-*.compute-1.amazonaws.com\n   StrictHostKeyChecking no\n   UserKnownHostsFile=/dev/null' >> ~/.ssh/config && \
-                              sudo echo -e 'Host datafi-*.everfi-dev.net\n   StrictHostKeyChecking no\n   UserKnownHostsFile=/dev/null' >> ~/.ssh/config && \
-                              chmod 600 ~/.ssh/config""",
+                              sudo aws configure set s3.signature_version s3v4
+                           """,
                 'no_output': True,
                 'name': 'system-bootstrap-config-sig-version'
                 }
@@ -268,6 +266,8 @@ class ETLPipeline(object):
                     tunneled_dbs = []
                 commands = [
                        '''aws s3 cp {key_loc} ~/.ssh/{key_name} && \ 
+                       sudo echo -e 'Host {tunnel_host}\n   StrictHostKeyChecking no\n   UserKnownHostsFile=/dev/null' >> ~/.ssh/config && \
+                       chmod 600 ~/.ssh/config && \
                        chmod 600 ~/.ssh/{key_name} && \
                        ssh -i ~/.ssh/{key_name} -M -S {host_db_key}_connector -fnNT -L {tunnel_port}:{remote_host}:{remote_port} {tunnel_user}@{tunnel_host} \
                        '''.format(
