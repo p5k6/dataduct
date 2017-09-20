@@ -292,6 +292,7 @@ class ETLPipeline(object):
               'command': full_cmd,
               'no_output': True,
               'depends_on': 'system-bootstrap-config-sig-version',
+              'input_node': [],
               'name': 'ssh-tunnel-setup'
             }
     
