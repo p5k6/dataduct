@@ -513,6 +513,7 @@ class ETLPipeline(object):
                 host="localhost" if config.mssql[db]['TUNNEL_HOST'] else config.mssql['HOST'],
                 port=config.mssql[db]['TUNNEL_PORT'] if config.mssql[db]['TUNNEL_HOST'] else config.mssql['PORT'],
                 jdbc_driver_uri=config.mssql[db]['JDBC_DRIVER_URI'],
+                trust_server_certificate=config.mssql[db]['TRUST_SERVER_CERTIFICATE'],
                 database=config.mssql[db]['DATABASE_NAME'],
             ) for db in config.mssql.keys() }
         return self._mssql_databases
