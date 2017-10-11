@@ -237,70 +237,6 @@ class ETLPipeline(object):
             pipeline_log_uri=self.s3_log_dir,
         )
 
-        self.set_up_ssh_tunnels()
-        self.set_up_s3v4()
-
-    def set_up_s3v4(self):
-        config_sig_version = {
-                'step_type': 'transform',
-                'command': """aws configure set s3.signature_version s3v4 && \
-                              sudo aws configure set s3.signature_version s3v4
-                           """,
-                'no_output': True,
-                'name': 'system-bootstrap-config-sig-version'
-                }
-
-        for resource_type in [const.EC2_RESOURCE_STR, const.EMR_CLUSTER_STR]:
-            if resource_type in self.bootstrap_definitions:
-                config_sig_version['resource_type'] = resource_type
-                self.bootstrap_definitions[resource_type].insert(0,config_sig_version)
-
-    def set_up_ssh_tunnels(self):
-        ssh_commands = []
-        for db_type in ['postgres', 'mysql', 'mssql']:
-            if hasattr(config, db_type):
-                db_config = eval("config." + db_type)
-                if db_config and db_config.keys() is not None:
-                    tunneled_dbs = [k for k in db_config.keys() if 'TUNNEL_HOST' in db_config[k] and db_config[k]['TUNNEL_HOST'] is not None]
-                else:
-                    tunneled_dbs = []
-                commands = [
-                       '''aws s3 cp {key_loc} ~/.ssh/{key_name} && \
-                       sudo echo -e 'Host {tunnel_host}\n   StrictHostKeyChecking no\n   UserKnownHostsFile=/dev/null' >> ~/.ssh/config && \
-                       chmod 600 ~/.ssh/config && \
-                       chmod 600 ~/.ssh/{key_name} && \
-                       ssh -i ~/.ssh/{key_name} -M -S {host_db_key}_connector -fnNT -L {tunnel_port}:{remote_host}:{remote_port} {tunnel_user}@{tunnel_host} \
-                       '''.format(
-                           key_loc=db_config[db]['TUNNEL_KEY'],
-                           key_name=urlparse(db_config[db]['TUNNEL_KEY']).path.split('/')[-1],
-                           host_db_key=db,
-                           tunnel_port=db_config[db]['TUNNEL_PORT'],
-                           remote_host=db_config[db]['HOST'],
-                           remote_port=db_config[db]['PORT'],
-                           tunnel_user=db_config[db]['TUNNEL_USER'],
-                           tunnel_host=db_config[db]['TUNNEL_HOST'],
-                           )
-                       for db in tunneled_dbs ]
-                ssh_commands.append(commands)
-
-        ssh_commands = list(chain(*ssh_commands))
-        if ssh_commands:
-            full_cmd = ' && '.join(ssh_commands)
-
-            ssh_tunnel_activity = {
-              'step_type': 'transform',
-              'command': full_cmd,
-              'no_output': True,
-              'depends_on': 'system-bootstrap-config-sig-version',
-              'input_node': [],
-              'name': 'ssh-tunnel-setup'
-            }
-
-            for resource_type in [const.EC2_RESOURCE_STR, const.EMR_CLUSTER_STR]:
-                if resource_type in self.bootstrap_definitions:
-                    ssh_tunnel_activity['resource_type'] = resource_type
-                    self.bootstrap_definitions[resource_type].insert(1,ssh_tunnel_activity)
-
     @property
     def bootstrap_steps(self):
         """Get the bootstrap_steps for the pipeline
@@ -508,27 +444,15 @@ class ETLPipeline(object):
 
 
         if not self._mssql_databases:
-            self._mssql_databases = {}
-            for db in config.mssql.keys():
-                trust_server = None
-                if 'TRUST_SERVER_CERTIFICATE' in config.mssql[db]:
-                    trust_server = config.mssql[db]['TRUST_SERVER_CERTIFICATE']
-
-                encrypt = None
-                if 'ENCRYPT' in config.mssql[db]:
-                    encrypt = config.mssql[db]['ENCRYPT']
-
-                self._mssql_databases[db] = self.create_pipeline_object(
-                    object_class=MssqlDatabase,
-                    username=config.mssql[db]['USERNAME'],
-                    password=config.mssql[db]['PASSWORD'],
-                    host="localhost" if config.mssql[db]['TUNNEL_HOST'] else config.mssql['HOST'],
-                    port=config.mssql[db]['TUNNEL_PORT'] if config.mssql[db]['TUNNEL_HOST'] else config.mssql['PORT'],
-                    jdbc_driver_uri=config.mssql[db]['JDBC_DRIVER_URI'],
-                    trust_server_certificate=trust_server,
-                    encrypt=encrypt,
-                    database=config.mssql[db]['DATABASE_NAME'],
-                )
+            self._mssql_databases = {db: self.create_pipeline_object(
+                object_class=MssqlDatabase,
+                username=config.mssql[db]['USERNAME'],
+                password=config.mssql[db]['PASSWORD'],
+                host=config.mssql[db]['HOST'],
+                port=config.mssql[db]['PORT'],
+                jdbc_driver_uri=config.mssql[db]['JDBC_DRIVER_URI'],
+                database=config.mssql[db]['DATABASE_NAME'],
+            ) for db in config.mssql.keys() }
         return self._mssql_databases
 
 
