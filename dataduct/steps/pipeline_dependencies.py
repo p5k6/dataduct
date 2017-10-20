@@ -56,9 +56,10 @@ class PipelineDependenciesStep(TransformStep):
                     '--pipeline_name=%s' % pipeline_name,
                     '--start_date=%s' % start_date,
                     '--refresh_rate=%s' % str(refresh_rate),
-                    '--sns_topic_arn=%s' % SNS_TOPIC_ARN,
                 ]
             )
+            if SNS_TOPIC_ARN:
+                script_arguments.extend(['--sns_topic_arn=%s' % SNS_TOPIC_ARN])
 
             if dependent_pipelines:
                 script_arguments.append('--dependencies')

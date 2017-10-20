@@ -22,6 +22,8 @@ class MssqlDatabase(PipelineObject):
                  database=None,
                  username=None,
                  jdbc_driver_uri=None,
+                 encrypt=None,
+                 trust_server_certificate=None,
                  password=None):
         """Constructor for the MSSQL class
 
@@ -38,7 +40,15 @@ class MssqlDatabase(PipelineObject):
         if (None in [ jdbc_driver_uri, username, password]):
             raise ETLConfigError('MSSQL credentials missing from config')
 
-        connection_string = "jdbc:sqlserver://" + host + ":" + str(port) + ";database=" + database + ";"
+        encrypt_cxn_string = ""
+        trust_server = ""
+
+        if encrypt is not None:
+            encrypt_cxn_string = "encrypt=" + str(encrypt).lower() + ";"
+        if trust_server_certificate is not None:
+            trust_server = "trustServerCertificate=" + str(trust_server_certificate).lower() + ";"
+
+        connection_string = "jdbc:sqlserver://" + host + ":" + str(port) + ";database=" + database + ";" + encrypt_cxn_string + trust_server
         jdbc_driver_class = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 
         kwargs = {
