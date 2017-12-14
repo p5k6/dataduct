@@ -48,9 +48,6 @@ class SqlActivity(Activity):
             raise ETLInputError(
                 'Input schedule must be of the type Schedule')
 
-        if not isinstance(script, S3File):
-            raise ETLInputError('script must be an S3File')
-
         # Set default values
         if depends_on is None:
             depends_on = []
@@ -66,8 +63,13 @@ class SqlActivity(Activity):
             runsOn=resource,
             workerGroup=worker_group,
             schedule=schedule,
-            scriptUri=script,
             scriptArgument=script_arguments,
             database=database,
             queue=queue
         )
+        if isinstance(script, str):
+            self.fields['script'] = [script]
+        elif isinstance(script, S3File):
+            self.fields['scriptUri'] = [script]
+        else:
+            raise ETLInputError('script must be an S3File or a string sql statement')
