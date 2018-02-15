@@ -43,7 +43,7 @@ class SNSAlarm(PipelineObject):
                  'error_message': '#{node.errorMessage}',
                  'error_stack_trace': '#{node.errorStackTrace}'
                 })
-            subject = 'Data Pipeline %s failed' % pipeline_name
+            subject = 'Data Pipeline Failed'
         else:
             if not my_message:
                 my_message = json.dumps({
@@ -53,7 +53,7 @@ class SNSAlarm(PipelineObject):
                      'pipeline_object_actual_start_time': '#{node.@actualStartTime}',
                      'pipeline_object_actual_end_time': '#{node.@actualEndTime}'
                })
-            subject = 'Data Pipeline %s succeeded ' % pipeline_name
+            subject = 'Data Pipeline Succeeded'
 
         if topic_arn is None:
             topic_arn = SNS_TOPIC_ARN_FAILURE
