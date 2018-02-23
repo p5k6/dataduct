@@ -3,6 +3,7 @@ ETL step wrapper for shell command activity can be executed on Ec2 / EMR
 """
 from ..pipeline import S3Node
 from ..pipeline import ShellCommandActivity
+from ..config import Config
 from ..s3 import S3Directory
 from ..s3 import S3File
 from ..s3 import S3Path
@@ -11,12 +12,17 @@ from ..utils.exceptions import ETLInputError
 from ..utils.helpers import exactly_one
 from ..utils.helpers import get_modified_s3_path
 from .etl_step import ETLStep
+from ..pipeline import SNSAlarm
 
 import logging
+import json
 logger = logging.getLogger(__name__)
+config = Config()
 
 SCRIPT_ARGUMENT_TYPE_STRING = 'string'
 SCRIPT_ARGUMENT_TYPE_SQL = 'sql'
+SNS_TOPIC_ARN_FAILURE = config.etl.get('SNS_TOPIC_ARN_FAILURE', const.NONE)
+SNS_TOPIC_ARN_SUCCESS = config.etl.get('DEFAULT_TOPIC_ARN_SUCCESS', const.NONE)
 
 
 class TransformStep(ETLStep):
@@ -36,6 +42,7 @@ class TransformStep(ETLStep):
                  no_output=False,
                  no_input=False,
                  precondition=None,
+                 send_sns_success_fail_messages=False,
                  **kwargs):
         """Constructor for the TransformStep class
 
@@ -64,6 +71,41 @@ class TransformStep(ETLStep):
         else:
             base_output_node = self.create_s3_data_node(
                 self.get_output_s3_path(get_modified_s3_path(output_path)))
+
+        sns_success_message=None
+        sns_failure_message=None
+
+        if send_sns_success_fail_messages:
+            subjects = [ {"pipeline_step_status_update": x } for x in ["success", "failure"]]
+            messages = [
+                    {
+                        "step_name": self.get_name(),
+                        "pipeline_object": "#{node.name}",
+                        "pipeline_object_scheduled_start_time": "#{node.@scheduledStartTime}"
+                    } for x in range(2)
+            ]
+
+            messages[0]["pipeline_object_actual_start_time"] = "#{node.@actualStartTime}"
+            messages[0]["pipeline_object_actual_end_time"] = "#{node.@actualEndTime}"
+            messages[1]["error_message"] = "#{node.errorMessage}"
+            messages[1]["error_stack_trace"] = "#{node.errorStackTrace}"
+            topic_arns = [SNS_TOPIC_ARN_SUCCESS, SNS_TOPIC_ARN_FAILURE]
+            self._sns_success_object = self.create_pipeline_object(
+                object_class=SNSAlarm,
+                topic_arn=topic_arns[0],
+                pipeline_name=self.get_name(),
+                my_message=json.dumps(messages[0]),
+                subject=subjects[0],
+                failure=False,
+            )
+            self._sns_object = self.create_pipeline_object(
+                object_class=SNSAlarm,
+                topic_arn=topic_arns[1],
+                pipeline_name=self.get_name(),
+                my_message=json.dumps(messages[1]),
+                subject=subjects[1],
+                failure=True,
+            )
 
         script_arguments = self.translate_arguments(script_arguments)
         if script_arguments is None:
